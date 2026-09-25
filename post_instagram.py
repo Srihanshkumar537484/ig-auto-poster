@@ -48,12 +48,14 @@ def require_env():
 
 def create_container(payload):
     r = requests.post(f"{GRAPH_URL}/{IG_USER_ID}/media", data=payload, timeout=30)
+    if not r.ok:
+        print(f"create_container failed: {r.status_code} {r.text}")
     r.raise_for_status()
     return r.json()["id"]
 
 
 def wait_until_ready(container_id, timeout_sec=300, interval=10):
-    """Reels need processing time; poll status_code until FINISHED."""
+    """Poll status_code until FINISHED. Used for both images and reels now."""
     waited = 0
     while waited < timeout_sec:
         r = requests.get(
@@ -78,6 +80,8 @@ def publish(container_id):
         data={"creation_id": container_id, "access_token": ACCESS_TOKEN},
         timeout=30,
     )
+    if not r.ok:
+        print(f"publish failed: {r.status_code} {r.text}")
     r.raise_for_status()
     return r.json()
 
@@ -89,7 +93,9 @@ def post_image(caption):
         "caption": caption,
         "access_token": ACCESS_TOKEN,
     })
-    print(f"Container: {container_id}, publishing...")
+    print(f"Container: {container_id}, waiting for processing...")
+    wait_until_ready(container_id, timeout_sec=60, interval=5)
+    print("Processing done, publishing...")
     result = publish(container_id)
     print(f"Image post published: {result}")
 
