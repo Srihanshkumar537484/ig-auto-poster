@@ -3,6 +3,9 @@ generate_reel.py
 Turns assets/post.jpg into a short vertical (1080x1920) video with a slow
 Ken-Burns zoom effect, using ffmpeg (already installed on GitHub Actions
 ubuntu runners -- free, no extra libraries needed).
+
+Fixed version: pads the square image with black bars top/bottom instead of
+cropping the sides, so text never gets cut off out of frame.
 """
 import os
 import subprocess
@@ -20,10 +23,13 @@ def generate():
         raise FileNotFoundError("Run generate_post.py first to create post.jpg")
 
     total_frames = DURATION_SEC * FPS
-    # zoompan: slow zoom-in from 1.0x to ~1.15x, output vertical 1080x1920
+    # Pad the 1080x1080 image into a 1080x1920 canvas (black bars top/bottom)
+    # so the full width -- and all the text -- stays inside frame. Then apply
+    # a gentle zoom that slowly eats into the bars rather than cropping the
+    # actual picture content.
     filter_complex = (
-        f"scale=1080:1920:force_original_aspect_ratio=increase,"
-        f"crop=1080:1920,"
+        f"scale=1080:1080,"
+        f"pad=1080:1920:0:(1920-1080)/2:color=black,"
         f"zoompan=z='min(zoom+0.0007,1.15)':d={total_frames}:"
         f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps={FPS}"
     )
@@ -46,3 +52,4 @@ def generate():
 
 if __name__ == "__main__":
     generate()
+    
