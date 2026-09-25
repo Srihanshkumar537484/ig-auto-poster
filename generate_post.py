@@ -85,7 +85,10 @@ def draw_centered_text(img, text, font_path):
     while True:
         bbox = draw.multiline_textbbox((0, 0), wrapped, font=font, spacing=14)
         tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        if tw <= w - 140 and th <= h - 260:
+        # 560px max width -- keeps text inside the ~607px zone that
+        # survives generate_reel.py's square-to-vertical crop, so it
+        # never gets cut off left/right when shown as a reel.
+        if tw <= 560 and th <= h - 260:
             break
         size -= 4
         if size < 28:
